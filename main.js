@@ -1,4 +1,1 @@
-function test(){
-    print ("Hello World");
-}
-print ("Hello World");
+console.log("Hello World");
