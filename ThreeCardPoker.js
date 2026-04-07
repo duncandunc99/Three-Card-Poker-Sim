@@ -69,7 +69,6 @@ function hasTrips(hand){
 function hasStraight(hand, straightLength){
     //Ace High Straight Check
     let sortedHandValues = sortHandRank(hand).map(card => rankValues[card.rank]); 
-    console.log(sortedHandValues);
     for(let i=0; i<= sortedHandValues.length - straightLength; i++){
         let consecutive = true;
         for (let j=1; j<straightLength; j++){
@@ -102,7 +101,20 @@ function hasFlush(hand){
 }
 //work on functionality *DOES NOT WORK YET*
 function hasFullHouse(hand){
+    const counts = {};
 
+    for (let card of hand){
+        const rank = card.rank;
+        counts[rank] = (counts[rank]|| 0) + 1
+    }
+    let tripsCount = 0;
+    let pairsCount = 0;
+
+    for (let rank in counts) {
+        if (counts[rank] >= 3 ) tripsCount++;
+        if (counts[rank] >= 2 ) pairsCount++;
+    }
+    return tripsCount >=1 && pairsCount >= 2;
 }
 function hasQuads(hand){
     let quadsCount = 0;
@@ -116,60 +128,63 @@ function hasQuads(hand){
     return false;
 }
 
-//work on functionality *DOES NOT WORK YET*
 function hasStraightFlush(hand, straightLength){
-    //Ace High Straight Check
-    let sortedHandValues = sortHandRank(hand).map(card => ({rank:rankValues[card.rank], suit:suitValues[card.suit]})); 
-    for(let i=0; i<= sortedHandValues.length - straightLength; i++){
-        let consecutive = true;
-        let flushed = true;
-        for (let j=1; j<straightLength; j++){
-            if(sortedHandValues[i+j] != sortedHandValues[i]+j){
-                consecutive = false;
-                break;
+    //Helper Check Function for Any Hand
+    function checkStraightFlush(ranks, straightLength){
+        for(let i=0; i<= ranks.length - straightLength; i++){
+            let consecutive = true;
+            for (let j=1; j<straightLength; j++){
+                let prev = ranks[i+j-1];
+                let curr = ranks[i+j];
+                if(curr != prev+1){
+                    consecutive = false;
+                    break;
+                }
             }
-            if (hand[i].suit != hand[j].suit){
-                flushed = false;
-                break;
-            }
+        if (consecutive) return true;
         }
-        if (consecutive && flushed) return true;
+        return false;
     }
-    //Ace Low Straight Check
-    sortedHandValues = sortedHandValues.map(v => (v === 14 ? 1:v));
-    for(let i=0; i<= sortedHandValues.length - straightLength; i++){
-        let consecutive = true;
-        let flushed = true;
-        for (let j=1; j<straightLength; j++){
-            if(sortedHandValues[i+j] != sortedHandValues[i]+j){
-                consecutive = false;
-                break;
-            }
-            if (hand[i].suit != hand[j].suit){
-                flushed = false;
-                break;
-            }
-        }
-        if (consecutive && flushed) return true;
+    //Group by Suit
+    const suits = {};
+    for (let card of hand){
+        const suit = card.suit;
+        const rank = rankValues[card.rank];
+        if (!suits[suit]) suits[suit] = [];
+        suits[suit].push(rank);
     }
-    return false;
+    for (let suit in suits){
+        let ranks = [...new Set(suits[suit])].sort((a,b) => a-b)
+        if (checkStraightFlush(ranks, straightLength)) return true;
+        ranks = ranks.map(r => (r === 14 ? 1:r)).sort((a,b) => a-b);
+        if (checkStraightFlush(ranks, straightLength)) return true;
+    }
+    return false;    
 }
-
+function drawHands(deck, quantity, size){
+    const hands = {};
+    for (let i=0; i<quantity; i++){
+        hands[i] = drawCards(size, deck);
+    }
+    console.log(hands);
+    return hands;
+}
+function checkHandForAllTypes(hand){
+    console.log(hand);
+    console.log((hasPair(hand)? "Hand has a pair":"Hand has no pair"));
+    console.log((hasTwoPair(hand)? "Hand has two pair":"Hand has no two pair"));
+    console.log((hasTrips(hand)? "Hand has trips":"Hand has no trips"));
+    console.log((hasStraight(hand)? "Hand has a straight":"Hand has no straight"));
+    console.log((hasFlush(hand)? "Hand has a flush":"Hand has no flush"));
+    console.log((hasFullHouse(hand)? "Hand has a full house":"Hand has no full house"));
+    console.log((hasQuads(hand)? "Hand has quads":"Hand has no quads"));
+    console.log((hasStraightFlush(hand)? "Hand has a Straight Flush":"Hand has no Straight Flush"));
+}
 let deck = createDeck();
 let shuffledDeck = shuffleDeck(deck);
-let hand1 = sortHandRank(drawCards(26, shuffledDeck));
-let hand2 = sortHandRank(drawCards(26, shuffledDeck));
-console.log(hand1);
-console.log(hasPair(hand1));
-console.log(hasTwoPair(hand1));
-console.log(hasTrips(hand1));
-console.log(hasStraight(hand1, hand1.length));
-console.log(hasFlush(hand1));
-console.log(hasQuads(hand1));
-console.log(hand2);
-console.log(hasPair(hand2));
-console.log(hasTwoPair(hand2));
-console.log(hasTrips(hand2));
-console.log(hasStraight(hand2, hand2.length));
-console.log(hasFlush(hand2));
-console.log(hasQuads(hand2));
+let hands = drawHands(shuffledDeck, 10, 5);
+console.log(hands.length);
+for (let i=0; i<hands.length; i++){
+    console.log(hands[i].length);
+    checkHandForAllTypes(hands[i]);
+}
